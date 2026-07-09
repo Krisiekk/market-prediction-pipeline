@@ -1,5 +1,5 @@
 import pandas as pd
-from pandas.core.interchange import column
+
 
 
 def add_sma(df, column="close", window =20):
@@ -18,12 +18,12 @@ def  add_rsi(df, column="close", window=14):
     col_name = f"RSI_{window}"
 
     gain = delta.where(delta > 0, 0)
-    lose = delta.where(delta < 0, 0).abs()
+    loss = delta.where(delta < 0, 0).abs()
 
     avg_gain = gain.rolling(window).mean()
-    avg_lose = lose.rolling(window).mean()
+    avg_loss = loss.rolling(window).mean()
 
-    rs = avg_gain / avg_lose
+    rs = avg_gain / avg_loss
 
 
     df[col_name]= 100 - 100 / (1 + rs)
