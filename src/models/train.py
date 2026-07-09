@@ -2,6 +2,7 @@ import pandas as pd
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import (
     accuracy_score,
     precision_score,
@@ -70,4 +71,29 @@ for split_index,(train_index, test_index) in enumerate(splits):
     print("\n")
 
     print(f"Confusion matrix {split_index} :\n{cm}")
+
+    rf_model = RandomForestClassifier(n_estimators=200,random_state=42,class_weight="balanced")
+
+    rf_model.fit(X_train, y_train)
+
+    rf_pred = rf_model.predict(X_test)
+
+    rf_accuracy = accuracy_score(y_test,rf_pred)
+    rf_precision = precision_score(y_test,rf_pred)
+    rf_recall = recall_score(y_test,rf_pred)
+    rf_f1 = f1_score(y_test,rf_pred)
+
+    rf_cm = confusion_matrix(y_test,rf_pred)
+
+    print(
+
+        f"Random Forest split {split_index}: "
+        f"accuracy={rf_accuracy:.4f}, "
+        f"precision={rf_precision:.4f}, "
+        f"recall={rf_recall:.4f}, "
+        f"f1={rf_f1:.4f}"
+
+    )
+
+    print(rf_cm)
 
