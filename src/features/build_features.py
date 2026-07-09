@@ -25,12 +25,12 @@ def build_features(df, horizon =1):
 
 if __name__ == "__main__":
     input_path = DATA_RAW_DIR / "xauusd_daily.csv"
-    output_path = DATA_PROCESSED_DIR / "xauusd_daily_features.csv"
+    output_path = DATA_PROCESSED_DIR / "xauusd_daily_features_h5.csv"
 
     df = pd.read_csv(input_path)
     df["datetime"] = pd.to_datetime(df["datetime"])
 
-    df_features = build_features(df,horizon =1)
+    df_features = build_features(df,horizon =5)
 
     df_features.to_csv(output_path,index=False)
 

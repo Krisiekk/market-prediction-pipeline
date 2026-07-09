@@ -14,7 +14,31 @@ from src.config import DATA_PROCESSED_DIR
 from src.validation.splits import create_time_series_splits
 
 
-df = pd.read_csv(DATA_PROCESSED_DIR / "xauusd_daily_features.csv")
+
+def add_result(results, model_name, split_index, y_test, y_pred):
+    cm = confusion_matrix(y_test, y_pred)
+
+    results.append({
+        "model": model_name,
+        "split": split_index,
+        "accuracy": accuracy_score(y_test, y_pred),
+        "precision": precision_score(y_test, y_pred, zero_division=0),
+        "recall": recall_score(y_test, y_pred, zero_division=0),
+        "f1": f1_score(y_test, y_pred, zero_division=0),
+        "tn": cm[0, 0],
+        "fp": cm[0, 1],
+        "fn": cm[1, 0],
+        "tp": cm[1, 1],
+    })
+
+    return cm
+
+
+
+
+results = []
+
+df = pd.read_csv(DATA_PROCESSED_DIR / "xauusd_daily_features_h5.csv")
 df["datetime"]= pd.to_datetime(df["datetime"])
 
 feature_columns=[
@@ -25,8 +49,15 @@ feature_columns=[
     'MACD_Signal',
     'MACD_HIST',
     'BB_UPPER',
-    'BB_LOWER'
+    'BB_LOWER',
+    'PRICE_TO_SMA20',
+    'PRICE_TO_EMA20',
+    'BB_WIDTH',
+    'BB_POSITION',
+    'RETURN_1D',
+    'RETURN_5D',
 ]
+
 
 splits = create_time_series_splits(df,n_splits=5)
 for split_index,(train_index, test_index) in enumerate(splits):
@@ -55,7 +86,7 @@ for split_index,(train_index, test_index) in enumerate(splits):
     recall = recall_score(y_test, y_pred)
     f1 = f1_score(y_test, y_pred)
 
-    cm = confusion_matrix(y_test, y_pred)
+    cm = add_result(results,"LogisticRegression",split_index,y_test,y_pred)
 
     coefficients = pd.Series(model.coef_[0],index = feature_columns).sort_values()
 
@@ -83,8 +114,7 @@ for split_index,(train_index, test_index) in enumerate(splits):
     rf_recall = recall_score(y_test,rf_pred)
     rf_f1 = f1_score(y_test,rf_pred)
 
-    rf_cm = confusion_matrix(y_test,rf_pred)
-
+    rf_cm = add_result( results, "RandomForest",  split_index,y_test, rf_pred)
     print(
 
         f"Random Forest split {split_index}: "
@@ -95,5 +125,9 @@ for split_index,(train_index, test_index) in enumerate(splits):
 
     )
 
-    print(rf_cm)
+results_df = pd.DataFrame(results)
+results_path = DATA_PROCESSED_DIR / "model_results_after_relative_feature_h5.csv"
+results_df.to_csv(results_path, index=False)
+
+
 

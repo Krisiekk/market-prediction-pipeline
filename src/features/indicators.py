@@ -63,6 +63,24 @@ def add_bollinger_bands(df,column="close", window=20,num_std =2):
 
     return df
 
+
+def add_relative_features(df):
+    df = df.copy()
+
+    df["PRICE_TO_SMA20"] = df["close"]/df["SMA_20"] -1
+    df["PRICE_TO_EMA20"] = df["close"]/df["EMA_20"] -1
+
+    df["BB_WIDTH"] = (df["BB_UPPER"] - df["BB_LOWER"])/df["BB_MIDDLE"]
+
+    df["BB_POSITION"]=(df["close"] - df["BB_LOWER"])/(df["BB_UPPER"] - df["BB_LOWER"])
+
+    df["RETURN_1D"]= df["close"].pct_change()
+    df["RETURN_5D"]= df["close"].pct_change(5)
+
+    return df
+
+
+
 def add_all_indicators(df):
 
     df = df.copy()
@@ -71,5 +89,6 @@ def add_all_indicators(df):
     df= add_ema(df,column="close",window=20)
     df = add_macd(df,column="close",fast=12,slow=26,signal=9)
     df = add_bollinger_bands(df,column="close",window=20)
+    df = add_relative_features(df)
 
     return df
