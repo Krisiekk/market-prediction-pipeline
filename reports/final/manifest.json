@@ -1,0 +1,48 @@
+{
+  "report_date": "2026-10-05",
+  "purpose": "Frozen summary tables from existing local development experiments; no retraining performed for the report.",
+  "tables": {
+    "model_comparison.csv": {
+      "source": "data/processed/h5_execution_model_comparison/summary.csv",
+      "sha256": "12f3c38baef6339a728d71072300814fbecf82c0a485e30c0b1716b9a78a79ec"
+    },
+    "ensemble_tuning.csv": {
+      "source": "data/processed/h5_execution_ensemble_tuning/summary.csv",
+      "sha256": "d5d80645ab719e01da945cd5a081c0a229b1a479ee8fb22b476dd21c274af964"
+    },
+    "arx.csv": {
+      "source": "data/processed/h5_execution_arx/summary.csv",
+      "sha256": "51aba39db79f89e2ee5e2e3049a6eec10b40bcfb3d3c34dc995ad5b4a978f35d"
+    },
+    "cost_backtest.csv": {
+      "source": "data/processed/h5_execution_cost_backtest/summary.csv",
+      "sha256": "50c73a739b278b9cacfe1ce073b544aa7253c216ac81897faf39a3265635c142"
+    },
+    "volatility_regimes.csv": {
+      "source": "data/processed/h5_execution_volatility_regimes/regime_summary.csv",
+      "sha256": "f910298800c322222f267b3f2aa92f6c16f7183673b241e0dd02ef0b1a133d6a"
+    },
+    "trading_hypotheses.csv": {
+      "source": "data/processed/h5_trading_hypotheses/summary.csv",
+      "sha256": "8268259dfff6128571be89fb04b0ab0be3c841c7b4924be7965dfd8f7677829e"
+    },
+    "splits.csv": {
+      "source": "data/processed/h5_execution_model_comparison/splits.csv",
+      "sha256": "867e1ce734840b0bb890c10aadaff1a99a4c8acb68670a683eb75b2c9c3f22e7"
+    }
+  },
+  "raw_inputs_sha256": {
+    "xauusd_daily.csv": "24d3f5b2caae9a7808edcc2bb5163d3675ac36c45e82ad85a9f3ea5036a4c34b",
+    "dxy_reconstructed_daily.csv": "5bc87629c6d36e2cd0c2bb28b378061034ab4b5260d64bf1251fb920a1dfcbfb",
+    "dgs10_daily.csv": "f4dca2d21462b1f58d3e3f2bd4b4062c13c6425fe28a01651202bfb3a4e40a1d",
+    "dfii10_daily.csv": "817788dc65e6f85d71ffc5539dd7ab6f8494556517f6a99f7d5c146fd9cf9e27",
+    "usd_broad_daily.csv": "3db82ab8416e172dc6ca6e14c3365fb94ee1d00591a78a2bebcce9037d6acfe9"
+  },
+  "versions_recorded_by_model_comparison": {
+    "numpy": "2.5.1",
+    "pandas": "3.0.3",
+    "scikit-learn": "1.9.0",
+    "xgboost": "3.3.0"
+  },
+  "input_hash_scope": "XAU hash matches model-comparison metadata. Other raw hashes describe files present when report was prepared; not independent proof of historical inputs to every experiment."
+}
