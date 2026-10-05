@@ -44,7 +44,7 @@ def _merge_last_known(left_df, right_df, value_column):
         left_df.sort_values("datetime"),
         right_df[
             ["datetime", value_column]
-        ].sort_values("datetime"),
+        ].dropna(subset=[value_column]).sort_values("datetime"),
         on="datetime",
         direction="backward",
     )
@@ -123,6 +123,17 @@ def add_intermarket_features(df):
         - 1
     )
 
+    # Okna liczone w obserwacjach XAU po połączeniu kalendarzy.
+    dxy_sma20 = df["dxy"].rolling(20).mean()
+    dxy_sma50 = df["dxy"].rolling(50).mean()
+    df["dxy_return_20d"] = df["dxy"].pct_change(20, fill_method=None)
+    df["dxy_vs_sma50"] = df["dxy"] / dxy_sma50 - 1
+    df["dxy_sma20_vs_sma50"] = dxy_sma20 / dxy_sma50 - 1
+    # Odchylenie standardowe dziennych zwrotów, bez annualizacji.
+    df["dxy_volatility_20d"] = (
+        df["dxy"].pct_change(fill_method=None).rolling(20).std()
+    )
+
     # ========================================================
     # US 10Y nominal yield
     # ========================================================
@@ -149,6 +160,15 @@ def add_intermarket_features(df):
     df["dfii10_change_5d"] = (
         df["dfii10"].diff(5)
     )
+
+    # Różnice w punktach procentowych, również dla real yields <= 0.
+    # Pełne okna: brak obserwacji w oknie pozostawia NaN.
+    for column in ("dgs10", "dfii10"):
+        sma20 = df[column].rolling(20).mean()
+        sma50 = df[column].rolling(50).mean()
+        df[f"{column}_change_20d"] = df[column].diff(20)
+        df[f"{column}_vs_sma20"] = df[column] - sma20
+        df[f"{column}_sma20_vs_sma50"] = sma20 - sma50
 
     # ========================================================
     # 10Y breakeven inflation
