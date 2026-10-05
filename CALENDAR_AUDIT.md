@@ -1,5 +1,37 @@
 # Audyt kalendarza XAU/USD — zatrzymanie przed holdoutem
 
+## Bieżący status i decyzja robocza (2026-10-05)
+
+- Na potrzeby obecnego eksperymentu przyjmujemy daty poniedziałek–piątek jako
+  **roboczy proxy kalendarza sesji**. H5 oznacza zamknięcie piątej kolejnej
+  obserwacji weekday po dacie sygnału; nie oznacza celu „otwarcie poniedziałku →
+  zamknięcie piątku”.
+- Filtr działa przed wskaźnikami, intermarket lagiem i targetem. Dla tej
+  konwencji ponownie przeliczono cechy, benchmark i ablation; wyniki są w
+  `WEEKDAY_RESULTS.md`. To wariant rozwojowy, nie potwierdzenie błędnych
+  timestampów ani pełny kalendarz świąt.
+- Dodatkowo porównano wariant H5 z sygnałem po `close(t)`, wejściem na
+  `open(t+1)` i wyjściem na `close(t+5)`, bez zmiany standardowego targetu.
+  Wyniki: `H5_EXECUTION_MODEL_COMPARISON.md`. Żaden model nie pokazał tu
+  przekonującej przewagi po accuracy; MLP nie osiągnął zbieżności.
+- Porównanie Twelve Data potwierdziło obecność weekendowych świec i ich
+  niejednorodny charakter. Dokładna granica świecy i wykonalność weekendowych
+  kwotowań pozostają niepotwierdzone. Dodatkowe pytanie do dostawcy pomijamy,
+  ponieważ nie jest konieczne do bieżącej konwencji modelowania.
+- Holdout nadal nie istnieje. Historia do 2026-09-27 była już używana w
+  benchmarkach i eksperymentach, więc nie można przemianować jej końcówki na
+  niezależny test.
+
+**Następny krok projektu:** zdecydować, czy wariant `open(t+1)` → `close(t+5)`
+ma zastąpić obecny close-to-close target. Porównanie wykonało development CV,
+ale nie koszty transakcyjne ani niezależny test. Jeśli target zostaje przyjęty,
+należy zamrozić również model i regułę wejścia/wyjścia, następnie zrobić
+kosztowy backtest developmentowy z jawnymi założeniami spreadu/slippage/prowizji.
+Nowy forward holdout zbierać i ocenić dopiero po zamrożeniu tych decyzji; nie
+przeszukiwać ponownie obecnej historii w poszukiwaniu najlepszego wariantu.
+
+## Stan pierwotnego audytu
+
 **Holdout nie został utworzony ani uruchomiony.** Zgodnie z warunkiem zadania
 zatrzymujemy się po audycie: H5 liczy rekordy, a nie zweryfikowane sesje.
 Dodatkowo najnowsza historia została już wykorzystana w CV i ablation.
@@ -126,3 +158,70 @@ niż obserwacja XAU. Daty nie dowodzą dostępności publikacji: nadal brak hist
 godzin publikacji i vintage FRED. Szczegóły w `intermarket_date_checks.csv`.
 Przeszło 9 testów. Testów treningu holdout nie uruchamiano, bo etap 2 jest zablokowany
 wynikiem audytu; żaden scaler ani model nie został tutaj dopasowany.
+
+## Uzupełnienie: sprawdzenie serii Twelve Data (2026-10-05)
+
+Oryginalny audyt powyżej był świadomym zatrzymaniem i nie zmieniał pipeline'u.
+Późniejsza, niezacommitowana zmiana odfiltrowuje weekendy w pipeline'ie ML;
+nie zmienia RAW ani nie potwierdza, że takie filtrowanie odpowiada sesjom
+dostawcy.
+
+Wykonano jedno ograniczone zapytanie `/time_series` dla `XAU/USD`, `interval=1day`,
+daty 2025-04-17–2025-04-30, bez parametru `timezone`. Odpowiedź HTTP 200 zawierała
+metadane `symbol=XAU/USD`, `interval=1day`, `currency_base=Gold Spot`,
+`currency_quote=US Dollar`, `type=Precious Metal`; pola `exchange` i
+`exchange_timezone` nie występowały. Wartości 2025-04-19, 2025-04-26 i 2025-04-27
+zgadzały się z lokalnym RAW OHLC. Rekord 2025-04-19 był płaski i powielał
+zamknięcie z 2025-04-18; rekordy 2025-04-26 i 2025-04-27 zmieniały ceny.
+
+Strona instrumentu Twelve Data przedstawia XAU/USD w strefie
+`Australia/Sydney` i podaje godziny rynku `24/7`. Dokumentacja API mówi, że
+parametr `timezone` jest ignorowany dla `1day`, a dane zwracane są w lokalnym
+czasie giełdy. To wyjaśnia konwencję prezentacji dat w serwisie, ale sama
+odpowiedź API nie identyfikuje strefy ani giełdy dla tego symbolu. Opis `24/7`
+nie potwierdza też, że weekendowe OHLC są równie reprezentatywne i wykonalne jak
+notowania w aktywnych godzinach rynku.
+
+Źródła: [karta XAU/USD w Twelve Data](https://twelvedata.com/markets/300755/commodity/xau-usd/historical-data),
+[dokumentacja API Twelve Data](https://twelvedata.com/docs).
+
+**Wniosek:** potwierdzono, że weekendowe wartości pochodzą również z odpowiedzi
+dostawcy, a nie z lokalnego przekształcenia. Ustalono prezentowaną strefę i
+deklarowane godziny instrumentu. Nie rozstrzygnięto jednak, czy te rekordy
+powinny być próbkami treningowymi dla konkretnego celu tradingowego. Filtr
+weekday pozostaje roboczą polityką eksperymentu, nie naprawą potwierdzonego
+błędu timestampu.
+
+Fetcher został rozszerzony tak, by przy przyszłym pobraniu zapisywał bez klucza
+API bezpieczne metadane odpowiedzi do `data/raw/twelvedata_request_metadata.json`.
+RAW nie został nadpisany.
+
+### Ograniczone porównanie intraday (2026-10-05)
+
+Po rotacji klucza pobrano tylko zakres 2025-04-17–2025-04-30: 245 świec `1h`
+z parametrem `timezone=Australia/Sydney` i 13 świec `1day`. Żadna odpowiedź
+intraday nie podała strefy w `meta`; same znaczniki czasu nie miały offsetu UTC.
+Surowe dane pobrano tylko do pamięci procesu i nie zapisano ich do RAW.
+
+Grupowanie świec godzinowych według tej samej daty kalendarzowej co świeca
+dzienna odtworzyło jej OHLC tylko dla 1 z 13 dat. Dopasowanie kolejnych świec
+dziennej open do godzinowej open pozwoliło odtworzyć dokładne OHLC dla 9 z 13
+świec, ale metoda jest niejednoznaczna przy wielokrotnie powtarzanym open i nie
+wyjaśniła wszystkich granic (w szczególności 26–27 i 29–30 kwietnia). Nie
+traktujemy tego dopasowania jako dowodu strefy czasowej ani pełnej definicji
+sesji.
+
+Weekendowe obserwacje nie są jednolite: świeca dzienna 2025-04-19 powtarzała
+OHLC 3326.27, natomiast 2025-04-26 miała zakres 3309.90–3319.60 i zamknęła się
+na 3314.00, a 2025-04-27 miała zakres 3315.10–3324.60 i zamknęła się na
+3321.00. W pobraniu godzinowym występowały zarówno płaskie powtórzenia ceny,
+jak i zmienne notowania w weekendowym zakresie dat. Sama agregacja nie mówi,
+czy takie kwotowania odpowiadają warunkom wykonania transakcji.
+
+**Status punktu 2:** potwierdzono sposób prezentacji dat dziennych w dokumentacji,
+obecność weekendowych świec i ich mieszaną zawartość. Nie potwierdzono
+jednoznacznej granicy dziennej świecy przez niezależną strefę czasową — odpowiedź
+intraday nie zwróciła jej w metadanych, a kalendarzowe grupowanie nie pasuje.
+Zgodnie z bieżącą decyzją weekday pozostaje jawnym proxy dla H5; nie uznajemy go
+za naprawę źródłowego timestampu. Dodatkowa odpowiedź dostawcy byłaby potrzebna
+do ustalenia dokładnej granicy sesji, ale nie blokuje tego eksperymentu.

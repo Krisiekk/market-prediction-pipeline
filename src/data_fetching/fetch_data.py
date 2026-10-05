@@ -1,3 +1,4 @@
+import json
 import os
 import requests
 from dotenv import load_dotenv
@@ -40,6 +41,29 @@ fred_api_key = fred_api_key.strip()
 # =========================
 
 TWELVE_DATA_URL = "https://api.twelvedata.com/time_series"
+TWELVE_DATA_METADATA_PATH = DATA_RAW_DIR / "twelvedata_request_metadata.json"
+TWELVE_DATA_METADATA = {
+    "provider": "Twelve Data",
+    "endpoint": TWELVE_DATA_URL,
+    "requests": {},
+}
+TWELVE_DATA_META_FIELDS = (
+    "symbol",
+    "interval",
+    "currency_base",
+    "currency_quote",
+    "type",
+    "exchange",
+    "exchange_timezone",
+    "mic_code",
+)
+
+
+def _write_twelve_data_metadata():
+    DATA_RAW_DIR.mkdir(parents=True, exist_ok=True)
+    temp_path = TWELVE_DATA_METADATA_PATH.with_suffix(".json.tmp")
+    temp_path.write_text(json.dumps(TWELVE_DATA_METADATA, indent=2) + "\n")
+    temp_path.replace(TWELVE_DATA_METADATA_PATH)
 
 
 def fetch_twelve_data_daily(symbol):
@@ -50,20 +74,46 @@ def fetch_twelve_data_daily(symbol):
         "apikey": api_key,
     }
 
-    response = requests.get(
-        TWELVE_DATA_URL,
-        params=params,
-        timeout=30
-    )
-
-    response.raise_for_status()
+    try:
+        response = requests.get(
+            TWELVE_DATA_URL,
+            params=params,
+            timeout=30
+        )
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        status = getattr(getattr(exc, "response", None), "status_code", None)
+        status_text = f"HTTP {status}" if status is not None else "connection error"
+        raise RuntimeError(
+            f"Twelve Data request failed for {symbol} interval=1day ({status_text})"
+        ) from None
 
     data = response.json()
 
     if "values" not in data:
-        raise ValueError(
-            f"Twelve Data error for {symbol}: {data}"
-        )
+        error_code = data.get("code", "unknown")
+        raise ValueError(f"Twelve Data returned no values for {symbol} (code={error_code})")
+
+    response_meta = data.get("meta") or {}
+    TWELVE_DATA_METADATA["requests"][symbol] = {
+        "request": {
+            "symbol": symbol,
+            "interval": "1day",
+            "outputsize": 5000,
+            "timezone": "omitted",
+        },
+        "response_meta": {
+            field: response_meta[field]
+            for field in TWELVE_DATA_META_FIELDS
+            if field in response_meta
+        },
+        "response_meta_fields_missing": [
+            field for field in ("exchange", "exchange_timezone")
+            if field not in response_meta
+        ],
+        "returned_rows": len(data["values"]),
+    }
+    _write_twelve_data_metadata()
 
     pair_df = pd.DataFrame(data["values"])
 
