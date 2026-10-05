@@ -316,24 +316,7 @@ brak wpływu przyszłych cen na wcześniejsze cechy/progi, koszty i brak
 nakładania transakcji. Nie dowodzą poprawności wszystkich założeń ekonomicznych
 ani dostępności danych makro w czasie rzeczywistym.
 
-## 10. Jak przedstawić projekt na rozmowie
-
-> Zbudowałem w Pythonie pipeline badawczy do prognozowania kierunku złota
-> w horyzoncie pięciu obserwacji. Połączyłem dane cenowe z DXY i rentownościami,
-> przeprowadziłem audyt kalendarza i porównanie modeli z chronologiczną
-> walidacją. Sprawdziłem regresję logistyczną, modele drzewiaste, SVM,
-> zespoły modeli, małą sieć neuronową i regresję z opóźnieniami zwrotów.
-> Następnie zbadałem wykonanie sygnałów po kosztach i wpływ reżimów zmienności.
-> Pokazałem, że niewielka poprawa AUC nie musi dawać lepszej strategii,
-> a bardziej złożony ensemble nie musi przewyższać prostego baseline’u.
-
-Na obronie lub rozmowie warto umieć wyjaśnić: różnicę między AUC a accuracy,
-potrzebę chronologii i gap, odmienność targetu close-to-close i next-open,
-różnicę między hard/soft voting oraz znaczenie dopasowanego baseline’u.
-Nie należy deklarować dochodowego bota, niezależnego holdoutu ani przewagi
-potwierdzonej statystycznie — tych rezultatów projekt nie dostarczył.
-
-## 11. Dokumentacja eksperymentów
+## 10. Dokumentacja eksperymentów
 
 | Eksperyment | Opis i szczegółowe wyniki |
 | --- | --- |

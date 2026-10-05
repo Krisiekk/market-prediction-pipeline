@@ -4,7 +4,7 @@
 
 [Raport końcowy](FINAL_PROJECT_REPORT.md) zbiera metodologię, wyniki modeli,
 ensemble, backtestu po kosztach oraz testów reżimów zmienności. Zawiera też
-instrukcję odtworzenia eksperymentów i opis projektu do portfolio.
+instrukcję odtworzenia eksperymentów i ograniczenia badania.
 [Tabele źródłowe raportu](reports/final/README.md) są małym snapshotem wyników,
 przeznaczonym do wersjonowania razem z raportem.
 
